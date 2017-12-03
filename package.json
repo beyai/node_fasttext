@@ -1,0 +1,25 @@
+{
+  "name": "node_fasttext",
+  "version": "0.0.2",
+  "description": "FastText for Nodejs",
+  "main": "main.js",
+  "scripts": {
+    "install": "node-gyp configure; node-gyp build"
+  },
+  "keywords": [
+    "fasttext",
+    "classifier",
+    "vecter"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/beyai/node_fasttext.git"
+  },
+  "author": "chandre",
+  "license": "MIT",
+  "gypfile": true,
+  "dependencies": {
+    "bindings": "^1.3.0",
+    "nan": "^2.8.0"
+  }
+}
