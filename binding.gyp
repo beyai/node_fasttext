@@ -24,14 +24,29 @@
                 "src/fasttext.cc"
             ],
             "include_dirs": ["<!(node -e \"require('nan')\")"],
-            'cflags!': [ '-fno-exceptions', '-Wformat=2', '-Werror', '-Wsign-compare'],
-            'cflags_cc!': [ '-fno-exceptions', '-Wformat=2', '-Werror', '-Wsign-compare'],
-            'conditions': [
-                ['OS=="mac"', {
-                    'xcode_settings': {
-                        'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
-                        'MACOSX_DEPLOYMENT_TARGET': '10.9'
-                    }
+            "cflags": [
+                "-std=c++0x",
+                "-pthread",
+                "-Wsign-compare",
+                "-fexceptions",
+                "-O0"
+            ],
+            "conditions": [
+                [ 'OS!="win"', {
+                    "cflags+": [ "-std=c++11", "-fexceptions" ],
+                    "cflags_c+": [ "-std=c++11", "-fexceptions" ],
+                    "cflags_cc+": [ "-std=c++11", "-fexceptions" ],
+                }],
+                [ 'OS=="mac"', {
+                    "cflags+": [ "-stdlib=libc++" ],
+                    "xcode_settings": {
+                        "OTHER_CPLUSPLUSFLAGS" : [ "-std=c++11", "-stdlib=libc++", "-pthread" ],
+                        "OTHER_LDFLAGS": [ "-stdlib=libc++" ],
+                        "MACOSX_DEPLOYMENT_TARGET": "10.7",
+                        "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
+                        "CLANG_CXX_LANGUAGE_STANDARD":"c++11",
+                        "CLANG_CXX_LIBRARY": "libc++"
+                    },
                 }]
             ]
         }

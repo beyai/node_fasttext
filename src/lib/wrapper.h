@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <mutex>
 #include <map>
 
 #include "./fasttext/src/fasttext.h"
