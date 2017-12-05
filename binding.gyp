@@ -6,19 +6,22 @@
 
 				"src/lib/fasttext/src/args.cc",
 				"src/lib/fasttext/src/dictionary.cc",
+                "src/lib/fasttext/src/fasttext.cc",
 				"src/lib/fasttext/src/matrix.cc",
+                "src/lib/fasttext/src/model.cc",
+                "src/lib/fasttext/src/productquantizer.cc",
 				"src/lib/fasttext/src/qmatrix.cc",
-				"src/lib/fasttext/src/vector.cc",
-				"src/lib/fasttext/src/model.cc",
 				"src/lib/fasttext/src/utils.cc",
-				"src/lib/fasttext/src/fasttext.cc",
+                "src/lib/fasttext/src/vector.cc",
 
                 "src/lib/node-argument.cc",
                 "src/lib/wrapper.cc",
 
+                "src/lib/train.cc",
+                "src/lib/quantize.cc",
+                "src/lib/test_classifier.cc",
                 "src/lib/loadModel.cc",
                 "src/lib/predict.cc",
-                "src/lib/train.cc",
                 "src/lib/nn.cc",
 
                 "src/fasttext.cc"

@@ -15,9 +15,10 @@
 
 #include "wrapper.h"
 
-// 模型是否加载
-Wrapper::Wrapper() : 
+// 初始化
+Wrapper::Wrapper() :
 	isLoaded(false),
+	quant_(false),
 	isPrecomputed_(false) {}
 
 // 文件是否存在
@@ -49,10 +50,14 @@ bool Wrapper::checkModel( std::istream& in ) {
 
 // 获取向量
 void Wrapper::getVector(Vector& vec, const std::string& word) {
-	const std::vector<int32_t>& ngrams = dict_->getNgrams(word);
+	const std::vector<int32_t>& ngrams = dict_->getNgrams(word);	
     vec.zero();
     for (auto it = ngrams.begin(); it != ngrams.end(); ++it) {
-        vec.addRow(*input_, *it);
+    	if (quant_) {
+        	vec.addRow(*qinput_, *it);
+    	} else {
+        	vec.addRow(*input_, *it);
+    	}
     }
     if (ngrams.size() > 0) {
         vec.mul(1.0 / ngrams.size());
@@ -63,17 +68,83 @@ void Wrapper::getVector(Vector& vec, const std::string& word) {
 std::map<std::string, std::string> Wrapper::train(const std::vector<std::string> args) {
 	std::shared_ptr<Args> a = std::make_shared<Args>();
 	a->parseArgs(args);
+
 	std::string inputFilename = a->input;
 	if ( !fileExist(inputFilename) ) {
 		throw "Input file is not exist.";
 	}
-	fasttext::FastText fasttext;
-	fasttext.train(a);
+
+	std::cout << "Input <<<<<" << a->input << std::endl;
+  	std::cout << "Output >>>>>" << a->output + ".bin" << std::endl;
+
+	fastText.train(a);
 	return loadModel(a->output + ".bin");
+}
+
+// 压缩模型
+std::map<std::string, std::string> Wrapper::quantize( const std::vector<std::string> args ) {
+	std::shared_ptr<Args> a = std::make_shared<Args>();
+  	a->parseArgs(args);
+
+  	std::string inputFilename = a->input;
+
+	if ( !fileExist(inputFilename) ) {
+		throw "Input file is not exist.";
+	}
+
+	if ( !fileExist( a->output + ".bin" ) ) {
+		throw "Model file is not exist.";
+	}
+
+	std::cout << "quantizing..." << std::endl;
+  	std::cout << "Input <<<<<" << inputFilename << std::endl;
+  	std::cout << "Output >>>>>" << a->output + ".ftz" << std::endl;
+
+	fastText.quantize(a);
+	std::map<std::string, std::string> info = loadModel( a->output + ".ftz" );
+
+	return info;
+}
+
+// 测试数据
+std::map<std::string, std::string> Wrapper::test( std::string testFile, int32_t k ) {
+	int32_t nexamples = 0, nlabels = 0;
+	double precision = 0.0;
+	std::vector<int32_t> line, labels;
+	
+	std::ifstream ifs(testFile);
+	if (!ifs.is_open()) {
+		throw "Test file cannot be opened!";
+    }
+
+	while (ifs.peek() != EOF) {
+		dict_->getLine(ifs, line, labels, model_->rng);
+		if (labels.size() > 0 && line.size() > 0) {
+			std::vector<std::pair<real, int32_t>> modelPredictions;
+			model_->predict(line, k, modelPredictions);
+			for (auto it = modelPredictions.cbegin(); it != modelPredictions.cend(); it++) {
+				if (std::find(labels.begin(), labels.end(), it->second) != labels.end()) {
+					precision += 1.0;
+				}
+			}
+			nexamples++;
+			nlabels += labels.size();
+		}
+	}
+
+	ifs.close();
+	std::map<std::string, std::string> response;
+	double pAtk = precision / (k * nexamples);
+	double rAtk = precision / nlabels;
+	response["P@" + std::to_string(k) + ""] = std::to_string(pAtk);
+	response["R@" + std::to_string(k) + ""] = std::to_string(rAtk);
+	response["Number of examples"] = std::to_string(nexamples);
+	return response;
 }
 
 // 获取模型信息
 std::map<std::string, std::string> Wrapper::getModelInfo() {
+
 	std::map<std::string, std::string> response;
 	// dictionary
     response["word_count"] = std::to_string( dict_->nwords() );
@@ -131,6 +202,7 @@ std::map<std::string, std::string> Wrapper::loadModel(std::string filename) {
 
 	// 读取模型文件
 	std::ifstream ifs(filename, std::ifstream::binary);
+
 	if (!ifs.is_open()) {
 		throw "Model file cannot be opened for loading!";
 	}
@@ -141,24 +213,26 @@ std::map<std::string, std::string> Wrapper::loadModel(std::string filename) {
 
     args_->load(ifs);
     dict_->load(ifs);
-    bool quant_input;
 
+    bool quant_input;
     ifs.read((char*) &quant_input, sizeof(bool));
-    if (quant_input) {
+
+    if (quant_input) { //是否为压缩后的模型
+        quant_ = true;
 		qinput_->load(ifs);
 	} else {
 		input_->load(ifs);
 	}
 
 	ifs.read((char*) &args_->qout, sizeof(bool));
-	if (quant_input && args_->qout) {
+	if ( quant_ && args_->qout) { //是否为压缩后的模型
 		qoutput_->load(ifs);
 	} else {
 		output_->load(ifs);
 	}
 
 	model_ = std::make_shared<Model>(input_, output_, args_, 0);
-	model_->quant_ = quant_input;
+	model_->quant_ = quant_;
 	model_->setQuantizePointer(qinput_, qoutput_, args_->qout);
 
 	if (args_->model == fasttext::model_name::sup) {
@@ -167,27 +241,32 @@ std::map<std::string, std::string> Wrapper::loadModel(std::string filename) {
 	} else {
 		// 词向量模型
 		model_->setTargetCounts(dict_->getCounts(fasttext::entry_type::word));
-        precomputeWordVectors();
 	}
+
 	isLoaded = true;
 	ifs.close();
+
 	return getModelInfo();
 }
 
 // 预计算词向量
 void Wrapper::precomputeWordVectors() {
+
     if (isPrecomputed_) {
         return;
     }
+
     precomputeMtx_.lock();
     if (isPrecomputed_) {
         precomputeMtx_.unlock();
         return;
     }
+
     Matrix wordVectors(dict_->nwords(), args_->dim);
     wordVectors_ = wordVectors;
     Vector vec(args_->dim);
     wordVectors_.zero();
+
     for (int32_t i = 0; i < dict_->nwords(); i++) {
         std::string word = dict_->getWord(i);
         getVector(vec, word);
@@ -260,15 +339,13 @@ std::vector<PredictResult> Wrapper::findNN(const Vector& queryVec, int32_t k, co
 // 邻近词查询
 std::vector<PredictResult> Wrapper::nn(std::string query, int32_t k) {
 	Vector queryVec(args_->dim);
+	precomputeWordVectors();
     std::set<std::string> banSet;
     banSet.clear();
     banSet.insert(query);
     getVector(queryVec, query);
     return findNN(queryVec, k, banSet);
 }
-
-
-
 
 
 

@@ -8,6 +8,8 @@
 #include "loadModel.h"
 #include "predict.h"
 #include "train.h"
+#include "test_classifier.h"
+#include "quantize.h"
 #include "nn.h"
 
 class FastText : public Nan::ObjectWrap {
@@ -17,10 +19,13 @@ class FastText : public Nan::ObjectWrap {
             tpl->SetClassName(Nan::New("FastText").ToLocalChecked());
             tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
+            Nan::SetPrototypeMethod(tpl, "train", train);
+            Nan::SetPrototypeMethod(tpl, "quantize", quantize);
+            Nan::SetPrototypeMethod(tpl, "test", testClassifier );
             Nan::SetPrototypeMethod(tpl, "loadModel", loadModel);
             Nan::SetPrototypeMethod(tpl, "predict", predict);
-            Nan::SetPrototypeMethod(tpl, "train", train);
             Nan::SetPrototypeMethod(tpl, "nn", Nn);
+
 
             constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
             Nan::Set(target, Nan::New("FastText").ToLocalChecked(),
@@ -28,9 +33,11 @@ class FastText : public Nan::ObjectWrap {
         }
 
     private:
+
     	explicit FastText() :
             wrapper_(new Wrapper())
             {};
+
         ~FastText() {}
 
         // 实例化
@@ -105,6 +112,69 @@ class FastText : public Nan::ObjectWrap {
                 Nan::ThrowError("Permitted command type is ['skipgram', 'cbow', 'supervised'].");
                 return;
             }
+        }
+
+        // 测试分类
+        static NAN_METHOD( testClassifier ) {
+            if (!info[0]->IsString()) {
+                Nan::ThrowError("test file path must be a string");
+                return;
+            }
+            if (!info[1]->IsUint32()) {
+                Nan::ThrowError("k must be a number");
+                return;
+            }
+
+            v8::String::Utf8Value modelArg(info[0]->ToString());
+            std::string filename = std::string(*modelArg);
+            int32_t k = info[1]->Uint32Value();
+
+            FastText* obj = Nan::ObjectWrap::Unwrap<FastText>( info.Holder() );
+
+            auto worker = new TestClassifier( filename, k, obj->wrapper_);
+            auto resolver = v8::Promise::Resolver::New( info.GetIsolate());
+
+            worker->SaveToPersistent("key",resolver);
+            info.GetReturnValue().Set( resolver->GetPromise() );
+            Nan::AsyncQueueWorker( worker );
+        }
+
+        // 模型转换
+        static NAN_METHOD( quantize ) {
+
+            if (!info[0]->IsObject()) {
+                Nan::ThrowError("First argument must be an object.");
+                return;
+            }
+            
+            v8::Local<v8::Object> confObj = v8::Local<v8::Object>::Cast( info[0] );
+            NodeArgument::NodeArgument nodeArg;
+            NodeArgument::CArgument c_argument;
+
+            try {
+                c_argument = nodeArg.ObjectToCArgument( confObj );
+            } catch (std::string errorMessage) {
+                Nan::ThrowError(errorMessage.c_str());
+                return;
+            }
+
+            int count = c_argument.argc;
+            char** argument = c_argument.argv;
+
+            char *argv[count + 2];
+            int argc = count + 2; 
+            for(int j = 0; j < count; j++) {
+                argv[j + 2] = argument[j];
+            }
+
+            FastText* obj = Nan::ObjectWrap::Unwrap<FastText>(info.Holder());
+            std::vector<std::string> args(argv, argv + argc);
+
+            auto worker = new Quantize(args, obj->wrapper_);
+            auto resolver = v8::Promise::Resolver::New( info.GetIsolate() );
+            worker->SaveToPersistent("key",resolver);
+            info.GetReturnValue().Set(resolver->GetPromise());
+            Nan::AsyncQueueWorker( worker );
         }
 
         // 加载模型

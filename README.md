@@ -27,13 +27,13 @@ FastText.train("supervised" ,  options ).then( res => {
 # API
 
 ### 模型训练 FastText.train( type , options )
-> 官方 [详细配置](https://github.com/facebookresearch/fastText#full-documentation)
+> 详细配置参数查看官方 [配置文档](https://github.com/facebookresearch/fastText#full-documentation)
 
 ```js
 /**
 * loadModel
 * @param String type 模型类型 [supervised | cbow | skipgram]
-* @param Object options 训练配置
+* @param Object options 配置参数
 * @return Promise 返回模型信息
 */
 
@@ -67,6 +67,43 @@ FastText.train("supervised" ,{
 })
 ``` 
 
+### 测试分类 FastText.test( testFile , k )
+> 必须先加载 supervised 模型，详细请查看官方 [文档](https://github.com/facebookresearch/fastText#text-classification)
+
+```js
+/**
+* nn
+* @param String testFile 待测试分类的文件
+* @param Number k 精度和查全率
+* @return Promise
+*/
+
+FastText.test( "./test.txt" , 2 ).then( res => {
+    console.log(res)
+    // { 'Number of examples': 68, 'P@3': 0.333333, 'R@3': 1 }
+})
+```
+
+
+
+### 压缩模型 FastText.quantize( options )
+> 必须先训练模型，output 文件名必须与原模型名相同， 详细请查看官方 [配置文档](https://github.com/facebookresearch/fastText#full-documentation)
+
+```js
+/**
+* quantize
+* @param Object options 配置参数
+* @return Promise 返回模型信息
+*/
+FastText.train({
+    "input" : "./train.txt",
+    "output" : "./model",
+}).then( res => {
+    console.log(res)
+})
+```
+
+
 ### 加载模型 FastText.loadModel( file )
 
 ```js
@@ -78,33 +115,11 @@ FastText.train("supervised" ,{
 
 FastText.loadModel("./model.bin").then( res => {
     console.log(res);
-    // { bucket: 2000000,
-    //   dim: 100,
-    //   epoch: 5,
-    //   label: '__label__',
-    //   label_count: 2,
-    //   loss: 'ns',
-    //   lr: 0.05,
-    //   lrUpdateRate: 100,
-    //   maxn: 6,
-    //   minCount: 5,
-    //   minCountLabel: 0,
-    //   minn: 3,
-    //   model: 'cbow',
-    //   neg: 5,
-    //   pretrainedVectors: '',
-    //   t: 0.0001,
-    //   thread: 12,
-    //   token_count: 1209,
-    //   verbose: 2,
-    //   wordNgrams: 1,
-    //   word_count: 27,
-    //   ws: 5 }
 })
 ```
 
 ### 文本分类 FastText.predict( text , k )
-> 模型必须是 supervised
+> 模型必须是 supervised，详细请查看官方 [文档](https://github.com/facebookresearch/fastText#text-classification)
 
 ```js
 /**

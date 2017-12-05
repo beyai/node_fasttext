@@ -16,7 +16,7 @@ namespace NodeArgument
     char* endptr = 0;
     strtod(str, &endptr);
     if(*endptr != '\0' || endptr == str) {
-        return false;
+      return false;
     }
     return true;
   }
@@ -175,21 +175,23 @@ namespace NodeArgument
   }
 
   v8::Local<v8::Object>  NodeArgument::mapToObject(std::map<std::string, std::string> obj) {
-    
+
+
     v8::Isolate* isolate = v8::Isolate::GetCurrent();
     v8::Local<v8::Object> result = v8::Object::New(isolate);
 
     for(auto const& iterator : obj) {
-      v8::Local<v8::Value> value;
+      v8::Local<v8::Value> value ;
+
       if(isOnlyDouble(iterator.second.c_str())) {
-          value = v8::Number::New(isolate, atof(iterator.second.c_str()));
-        } else {
-          value = v8::String::NewFromUtf8(isolate, iterator.second.c_str());
-        }
-        result->Set(
-          v8::String::NewFromUtf8(isolate, iterator.first.c_str()), 
-          value          
-        );
+        value = v8::Number::New(isolate, atof(iterator.second.c_str()));
+      } else {
+        value = v8::String::NewFromUtf8(isolate, iterator.second.c_str());
+      }
+      result->Set(
+        v8::String::NewFromUtf8(isolate, iterator.first.c_str()), 
+        value          
+      );
     }
     return result;
   }

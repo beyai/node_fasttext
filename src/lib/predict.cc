@@ -1,3 +1,4 @@
+#include <iostream>
 #include "predict.h"
 
 void Predict::Execute () {
@@ -20,8 +21,8 @@ void Predict::HandleErrorCallback () {
 void Predict::HandleOKCallback () {
 	
     Nan::HandleScope scope;
-    v8::Local<v8::Array> result = Nan::New<v8::Array>(result_.size());
-    
+    v8::Local<v8::Array> result = Nan::New<v8::Array>( result_.size() );
+
     for(uint32_t i = 0; i < result_.size(); i++) {
         v8::Local<v8::Object> returnObject = Nan::New<v8::Object>();
         returnObject->Set(

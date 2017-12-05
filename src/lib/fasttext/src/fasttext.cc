@@ -163,6 +163,7 @@ void FastText::loadModel(std::istream& in) {
   } else {
     output_->load(in);
   }
+  
 
   model_ = std::make_shared<Model>(input_, output_, args_, 0);
   model_->quant_ = quant_;
