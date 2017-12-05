@@ -11,6 +11,8 @@
 #include "test_classifier.h"
 #include "quantize.h"
 #include "nn.h"
+#include "analogies.h"
+#include "getVector.h"
 
 class FastText : public Nan::ObjectWrap {
     public: 
@@ -25,6 +27,8 @@ class FastText : public Nan::ObjectWrap {
             Nan::SetPrototypeMethod(tpl, "loadModel", loadModel);
             Nan::SetPrototypeMethod(tpl, "predict", predict);
             Nan::SetPrototypeMethod(tpl, "nn", Nn);
+            Nan::SetPrototypeMethod(tpl, "analogies", analogies);
+            Nan::SetPrototypeMethod(tpl, "getVector", getVector);
 
 
             constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
@@ -58,12 +62,12 @@ class FastText : public Nan::ObjectWrap {
         static NAN_METHOD( train ) {
 
            if (!info[0]->IsString()) {
-                Nan::ThrowError("First argument must be a command string.");
+                Nan::ThrowError("type argument must be a string.");
                 return;
             }
 
             if (!info[1]->IsObject()) {
-                Nan::ThrowError("Second argument must be an object.");
+                Nan::ThrowError("options argument must be an object.");
                 return;
             }
             
@@ -120,14 +124,14 @@ class FastText : public Nan::ObjectWrap {
                 Nan::ThrowError("test file path must be a string");
                 return;
             }
-            if (!info[1]->IsUint32()) {
-                Nan::ThrowError("k must be a number");
-                return;
+
+            int32_t k = 1;
+            if (info[1]->IsUint32()) {
+                k = info[1]->Uint32Value();
             }
 
             v8::String::Utf8Value modelArg(info[0]->ToString());
             std::string filename = std::string(*modelArg);
-            int32_t k = info[1]->Uint32Value();
 
             FastText* obj = Nan::ObjectWrap::Unwrap<FastText>( info.Holder() );
 
@@ -203,12 +207,11 @@ class FastText : public Nan::ObjectWrap {
                 Nan::ThrowError("sentence must be a string");
                 return;
             }
-            if (!info[1]->IsUint32()) {
-                Nan::ThrowError("k must be a number");
-                return;
+            int32_t k = 1;
+            if (info[1]->IsUint32()) {
+                k = info[1]->Uint32Value();
             }
-
-            int32_t k = info[1]->Uint32Value();
+           
             v8::String::Utf8Value sentenceArg(info[0]->ToString());
             std::string sentence = std::string(*sentenceArg);
             FastText* obj = Nan::ObjectWrap::Unwrap<FastText>(info.Holder());
@@ -222,16 +225,17 @@ class FastText : public Nan::ObjectWrap {
 
         // 邻近词
         static NAN_METHOD( Nn ) {
+
             if (!info[0]->IsString()) {
-                Nan::ThrowError("sentence must be a string");
+                Nan::ThrowError("word must be a string");
                 return;
             }
-            if (!info[1]->IsUint32()) {
-                Nan::ThrowError("k must be a number");
-                return;
+
+            int32_t k = 1;
+            if (info[1]->IsUint32()) {
+                k = info[1]->Uint32Value();
             }
            
-            int32_t k = info[1]->Uint32Value();
             v8::String::Utf8Value sentenceArg(info[0]->ToString());
             std::string sentence = std::string(*sentenceArg);
             FastText* obj = Nan::ObjectWrap::Unwrap<FastText>(info.Holder());
@@ -242,6 +246,58 @@ class FastText : public Nan::ObjectWrap {
             info.GetReturnValue().Set(resolver->GetPromise());
             Nan::AsyncQueueWorker(worker);
         }
+        
+        // 词类比
+        static NAN_METHOD( analogies ) {
+
+            if (!info[0]->IsArray()) {
+                Nan::ThrowError("words must be a array");
+                return;
+            }
+
+            int32_t k = 1;
+            if (info[1]->IsUint32()) {
+                k = info[1]->Uint32Value();
+            }
+
+            v8::Local<v8::Object> arr = v8::Local<v8::Object>::Cast(info[0]);
+            NodeArgument::NodeArgument nodeArg;
+            std::vector<std::string> words = nodeArg.ObjectToArrayString(arr);
+
+            if ( words.size() != 3 ) {
+                Nan::ThrowError("words length must equals 3 ");
+                return;
+            }
+
+            FastText* obj = Nan::ObjectWrap::Unwrap<FastText>(info.Holder());
+            auto resolver = v8::Promise::Resolver::New( info.GetIsolate());
+            auto worker = new Analogies( words, k, obj->wrapper_ );
+            worker->SaveToPersistent("key",resolver);
+            info.GetReturnValue().Set(resolver->GetPromise());
+            Nan::AsyncQueueWorker(worker);
+
+        }
+        // 获取向量
+        static NAN_METHOD(getVector) {
+            if (!info[0]->IsString()) {
+                Nan::ThrowError("text must be a string");
+                return;
+            }
+
+            v8::String::Utf8Value modelArg(info[0]->ToString());
+            std::string text = std::string(*modelArg);
+            FastText* obj = Nan::ObjectWrap::Unwrap<FastText>( info.Holder() );
+
+            auto worker = new GetVector( text, obj->wrapper_);
+            auto resolver = v8::Promise::Resolver::New( info.GetIsolate());
+            worker->SaveToPersistent("key",resolver);
+            info.GetReturnValue().Set(resolver->GetPromise());
+            Nan::AsyncQueueWorker( worker );
+
+        }
+
+
+
 
         static inline Nan::Persistent<v8::Function> & constructor() {
             static Nan::Persistent<v8::Function> my_constructor;

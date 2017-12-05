@@ -1,17 +1,6 @@
 #include <math.h>
 #include <fenv.h>
 
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <thread>
-#include <queue>
-#include <string>
-#include <vector>
-#include <map>
-#include <algorithm>
-#include <mutex>
-
 
 #include "wrapper.h"
 
@@ -111,7 +100,7 @@ std::map<std::string, std::string> Wrapper::test( std::string testFile, int32_t 
 	int32_t nexamples = 0, nlabels = 0;
 	double precision = 0.0;
 	std::vector<int32_t> line, labels;
-	
+
 	std::ifstream ifs(testFile);
 	if (!ifs.is_open()) {
 		throw "Test file cannot be opened!";
@@ -347,10 +336,75 @@ std::vector<PredictResult> Wrapper::nn(std::string query, int32_t k) {
     return findNN(queryVec, k, banSet);
 }
 
+// 词语类比
+std::vector<PredictResult> Wrapper::analogies(std::vector<std::string> words, int32_t k ) {
+	Vector buffer(args_->dim) , queryVec(args_->dim);
+	precomputeWordVectors();
 
+    std::set<std::string> banSet;
+    banSet.clear();
 
+	banSet.insert(words[0]);
+    getVector(buffer, words[0]);
+    queryVec.addVector(buffer, 1.0);
 
+    banSet.insert(words[1]);
+    getVector(buffer, words[1]);
+    queryVec.addVector(buffer, -1.0);
 
+    banSet.insert(words[2]);
+    getVector(buffer, words[2]);
+    queryVec.addVector(buffer, 1.0);
 
+    return findNN(queryVec, k, banSet);
+}
 
+// 词向量
+std::map<std::string, std::vector<double>> Wrapper::wordVectors( std::string query ) {
+	Vector queryVec(args_->dim);
+	getVector(queryVec, query);
+	std::map<std::string, std::vector<double>> response;
+	std::vector<double> arr( queryVec.size() );
+	for ( int64_t i = 0; i < queryVec.size(); i++ ) {
+		arr[i] = queryVec[i];
+	}
+	response[query] = arr;
+	return response;
+}
 
+// 文本向量
+std::map<std::string, std::vector<double>>  Wrapper::textVectors( std::string query ) {
+	std::vector<int32_t> line, labels;
+	Vector vec(args_->dim);
+	std::istringstream input_string( query );
+	dict_->getLine( input_string, line, labels, model_->rng);
+	vec.zero();
+	for (auto it = line.cbegin(); it != line.cend(); ++it) {
+		if (quant_) {
+        	vec.addRow(*qinput_, *it);
+    	} else {
+        	vec.addRow(*input_, *it);
+    	}
+	}
+	if (!line.empty()) {
+		vec.mul(1.0 / line.size());
+	}
+
+	std::map<std::string, std::vector<double>> response;
+	std::vector<double> arr(vec.size());
+	for ( int64_t i = 0; i < vec.size(); i++ ) {
+		arr[i] = vec[i];
+	}
+	response[ query ] = arr;
+
+	return response;
+}
+
+// 输出向量
+std::map<std::string, std::vector<double>>   Wrapper::getVector(  std::string query ) {
+	if (args_->model == fasttext::model_name::sup) {
+		return textVectors( query );
+    } else {
+		return wordVectors( query );
+    }
+}

@@ -1,10 +1,17 @@
 #ifndef WRAPPER_H
 #define WRAPPER_H
 
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <thread>
+#include <queue>
 #include <string>
 #include <vector>
-#include <mutex>
 #include <map>
+#include <algorithm>
+#include <mutex>
+#include <array>
 
 #include "./fasttext/src/fasttext.h"
 
@@ -55,6 +62,10 @@ class Wrapper {
         std::map<std::string, std::string> getModelInfo();
     	// 邻近词查询
     	std::vector<PredictResult> findNN(const Vector&, int32_t, const std::set<std::string>&);
+        // 词向量
+        std::map<std::string, std::vector<double>> wordVectors( std::string query );
+        // 文本向量
+        std::map<std::string, std::vector<double>> textVectors( std::string query );
 
 
     // 公共
@@ -72,5 +83,9 @@ class Wrapper {
 		std::vector<PredictResult> predict(std::string sentence , int32_t k );
 		// 邻近词查询
 		std::vector<PredictResult> nn(std::string query, int32_t k);
+        // 词语类比
+        std::vector<PredictResult> analogies( std::vector<std::string> words, int32_t k );
+        // 打印向量
+       std::map<std::string, std::vector<double>>  getVector(  std::string query );
 };
 #endif

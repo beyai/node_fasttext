@@ -105,7 +105,8 @@ namespace NodeArgument
         "input", "test", "output", "lr", "lrUpdateRate", 
         "dim", "ws", "epoch", "minCount", "minCountLabel", "neg",
         "wordNgrams", "loss", "bucket", "minn", "maxn",
-        "thread", "t", "label", "verbose", "pretrainedVectors"
+        "thread", "t", "label", "verbose", "pretrainedVectors",
+        "cutoff","retrain","qnorm","qout","dsub"
       };
       
       for (uint32_t i = 0; i < indexLen; ++i) {

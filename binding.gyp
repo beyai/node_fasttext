@@ -23,6 +23,8 @@
                 "src/lib/loadModel.cc",
                 "src/lib/predict.cc",
                 "src/lib/nn.cc",
+                "src/lib/getVector.cc",
+                "src/lib/analogies.cc",
 
                 "src/fasttext.cc"
             ],

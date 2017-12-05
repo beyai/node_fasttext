@@ -74,7 +74,7 @@ FastText.train("supervised" ,{
 /**
 * nn
 * @param String testFile 待测试分类的文件
-* @param Number k 精度和查全率
+* @param Number k 精度和查全率，默认值为 1
 * @return Promise
 */
 
@@ -83,7 +83,6 @@ FastText.test( "./test.txt" , 2 ).then( res => {
     // { 'Number of examples': 68, 'P@3': 0.333333, 'R@3': 1 }
 })
 ```
-
 
 
 ### 压缩模型 FastText.quantize( options )
@@ -125,7 +124,7 @@ FastText.loadModel("./model.bin").then( res => {
 /**
 * predict
 * @param String text 文本内容
-* @param Number k 按相似度降序排列，返回 n 个分类
+* @param Number k 按相似度降序排列，返回 n 个分类，默认值为 1
 * @return Promise
 */
 
@@ -136,14 +135,14 @@ FastText.predict("This is Band of Outsiders on Twitter" , 2 ).then( res => {
 })
 ```
 
-### 查询与词语最相似的词语 FastText.nn( word , k )
-> 模型必须是 cbow 或 skipgram
+### 相似词查询 FastText.nn( word , k )
+> 模型必须是 cbow 或 skipgram，详细请查看官方 [文档](https://github.com/facebookresearch/fastText/blob/master/tutorials/unsupervised-learning.md#nearest-neighbor-queries)
 
 ```js
 /**
 * nn
 * @param String word 词
-* @param Number k 按相似度降序排列，返回 n 个相似的词
+* @param Number k 按相似度降序排列，返回 n 个相似的词，默认值为 1
 * @return Promise
 */
 
@@ -154,6 +153,46 @@ FastText.nn( "word" , 2 ).then( res => {
 })
 ```
 
+### 词语类比查询 FastText.analogies( words , k )
+> 模型必须是 cbow 或 skipgram，详细请查看官方 [文档](https://github.com/facebookresearch/fastText/blob/master/tutorials/unsupervised-learning.md#word-analogies)
+
+```js
+/**
+* analogies
+* @param Array words 词语，必须为3个词语
+* @param Number k 按相似度降序排列，语义距离最近 n 个相似的词，默认值为 1
+* @return Promise 
+*/
+
+FastText.analogies( ["berlin","germany","france"] , 2 ).then( res => {
+    console.log(res)
+    // [ { word: 'paris', value: 0.768954 },
+    // { word: 'louveciennes', value: 0.765569 } ]
+})
+```
+
+
+### 获取向量 FastText.getVector( text )
+
+```js
+/**
+* getVector
+* @param String text 词语或句子
+* @return Promise 
+*/
+
+FastText.getVector( "paris").then( res => {
+    console.log(res)
+    // { text: 'paris', value: [
+    //     -0.49160531163215637,
+    //     0.08759436011314392,
+    //     0.12446501106023788,
+    //     -0.21982385218143463,
+    //     ...
+    //     -0.2687559723854065
+    // ]},
+})
+```
 
 
 

@@ -487,17 +487,21 @@ void FastText::analogies(int32_t k) {
   precomputeWordVectors(wordVectors);
   std::set<std::string> banSet;
   std::cout << "Query triplet (A - B + C)? ";
+
   while (true) {
     banSet.clear();
     query.zero();
     std::cin >> word;
+
     banSet.insert(word);
     getVector(buffer, word);
     query.addVector(buffer, 1.0);
+
     std::cin >> word;
     banSet.insert(word);
     getVector(buffer, word);
     query.addVector(buffer, -1.0);
+    
     std::cin >> word;
     banSet.insert(word);
     getVector(buffer, word);
