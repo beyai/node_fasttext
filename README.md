@@ -95,7 +95,7 @@ FastText.test( "./test.txt" , 2 ).then( res => {
 * @param Object options 配置参数
 * @return Promise 返回模型信息
 */
-FastText.train({
+FastText.quantize({
     "input" : "./train.txt",
     "output" : "./model",
 }).then( res => {
