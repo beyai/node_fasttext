@@ -13,6 +13,7 @@
 #include "nn.h"
 #include "analogies.h"
 #include "getVector.h"
+#include "similarity.h"
 
 class FastText : public Nan::ObjectWrap {
     public: 
@@ -27,6 +28,7 @@ class FastText : public Nan::ObjectWrap {
             Nan::SetPrototypeMethod(tpl, "loadModel", loadModel);
             Nan::SetPrototypeMethod(tpl, "predict", predict);
             Nan::SetPrototypeMethod(tpl, "nn", Nn);
+            Nan::SetPrototypeMethod(tpl, "similarity", similarity);
             Nan::SetPrototypeMethod(tpl, "analogies", analogies);
             Nan::SetPrototypeMethod(tpl, "getVector", getVector);
 
@@ -246,6 +248,35 @@ class FastText : public Nan::ObjectWrap {
             info.GetReturnValue().Set(resolver->GetPromise());
             Nan::AsyncQueueWorker(worker);
         }
+
+       // 计算两个词语的语义距离
+        static NAN_METHOD( similarity ) {
+
+            if (!info[0]->IsString()) {
+                Nan::ThrowError("first must be a string");
+                return;
+            }
+
+            if (!info[1]->IsString()) {
+                Nan::ThrowError("second must be a string");
+                return;
+            }
+           
+            v8::String::Utf8Value whatArg(info[0]->ToString());
+            std::string what = std::string(*whatArg);
+
+            v8::String::Utf8Value withArg(info[1]->ToString());
+            std::string with = std::string(*withArg);
+
+            FastText* obj = Nan::ObjectWrap::Unwrap<FastText>(info.Holder());
+            auto resolver = v8::Promise::Resolver::New( info.GetIsolate());
+            auto worker = new Similarity( what, with, obj->wrapper_ );
+
+            worker->SaveToPersistent("key",resolver);
+            info.GetReturnValue().Set(resolver->GetPromise());
+            Nan::AsyncQueueWorker(worker);
+        }
+        
         
         // 词类比
         static NAN_METHOD( analogies ) {

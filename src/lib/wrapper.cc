@@ -294,10 +294,11 @@ std::vector<PredictResult> Wrapper::predict (std::string sentence , int32_t k ) 
 // 邻近词查询
 std::vector<PredictResult> Wrapper::findNN(const Vector& queryVec, int32_t k, const std::set<std::string>& banSet ) {
 	real queryNorm = queryVec.norm();
-
+	
 	if (std::abs(queryNorm) < 1e-8) {
         queryNorm = 1;
     }
+
 
     std::priority_queue<std::pair<real, std::string>> heap;
     Vector vec(args_->dim);
@@ -334,6 +335,30 @@ std::vector<PredictResult> Wrapper::nn(std::string query, int32_t k) {
     banSet.insert(query);
     getVector(queryVec, query);
     return findNN(queryVec, k, banSet);
+}
+
+// 计算两个词语的语义距离
+float Wrapper::similarity(std::string what, std::string with ) {
+	std::map<std::string, std::vector<double>> vecA = getVector(what);
+	std::map<std::string, std::vector<double>> vecB = getVector(with);
+	std::vector<double> a , b ;
+    for (auto const& iterator : vecA ) {
+    	a = iterator.second;
+    }
+    for (auto const& iterator : vecB ) {
+       b = iterator.second;
+    }
+    
+    if (a.size() != b.size() ) {
+    	return ( 0.0 );
+    }
+    float ab = 0.0 , a2 = 0.0 , b2 = 0.0;
+    for (uint i = 0; i < a.size(); i++) {
+        ab += (a[i] * b[i]);
+        a2 += pow(a[i], 2);
+        b2 += pow(b[i], 2);
+    }
+    return ( ab / (sqrt(a2) * sqrt(b2)) );
 }
 
 // 词语类比
@@ -401,7 +426,7 @@ std::map<std::string, std::vector<double>>  Wrapper::textVectors( std::string qu
 }
 
 // 输出向量
-std::map<std::string, std::vector<double>>   Wrapper::getVector(  std::string query ) {
+std::map<std::string, std::vector<double>>  Wrapper::getVector(  std::string query ) {
 	if (args_->model == fasttext::model_name::sup) {
 		return textVectors( query );
     } else {

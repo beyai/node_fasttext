@@ -87,5 +87,7 @@ class Wrapper {
         std::vector<PredictResult> analogies( std::vector<std::string> words, int32_t k );
         // 打印向量
        std::map<std::string, std::vector<double>>  getVector(  std::string query );
+       // 计算两个词语的语义距离
+       float similarity(std::string word1, std::string word2 );
 };
 #endif

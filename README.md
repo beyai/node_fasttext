@@ -152,6 +152,22 @@ FastText.nn( "word" , 2 ).then( res => {
     // { word: 'you', value: 1.2910933389370642 } ]
 })
 ```
+### 计算两个词语的语义距离 FastText.similarity( what , with )
+> 模型必须是 cbow 或 skipgram
+
+```js
+/**
+* similarity
+* @param String what 一个词
+* @param String with 另一个词
+* @return Promise 余弦距离
+*/
+
+FastText.analogies( "山东", "江苏" ).then( res => {
+    console.log(res)
+    // 0.81871825
+})
+```
 
 ### 词语类比查询 FastText.analogies( words , k )
 > 模型必须是 cbow 或 skipgram，详细请查看官方 [文档](https://github.com/facebookresearch/fastText/blob/master/tutorials/unsupervised-learning.md#word-analogies)

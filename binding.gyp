@@ -3,7 +3,6 @@
         {
             "target_name": "fasttext",
             "sources": [
-
 				"src/lib/fasttext/src/args.cc",
 				"src/lib/fasttext/src/dictionary.cc",
                 "src/lib/fasttext/src/fasttext.cc",
@@ -13,19 +12,17 @@
 				"src/lib/fasttext/src/qmatrix.cc",
 				"src/lib/fasttext/src/utils.cc",
                 "src/lib/fasttext/src/vector.cc",
-
                 "src/lib/node-argument.cc",
                 "src/lib/wrapper.cc",
-
                 "src/lib/train.cc",
                 "src/lib/quantize.cc",
                 "src/lib/test_classifier.cc",
                 "src/lib/loadModel.cc",
                 "src/lib/predict.cc",
                 "src/lib/nn.cc",
+                "src/lib/similarity.cc",
                 "src/lib/getVector.cc",
                 "src/lib/analogies.cc",
-
                 "src/fasttext.cc"
             ],
             "include_dirs": ["<!(node -e \"require('nan')\")"],

@@ -1,6 +1,6 @@
 {
   "name": "node_fasttext",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "FastText for Nodejs",
   "main": "main.js",
   "scripts": {
